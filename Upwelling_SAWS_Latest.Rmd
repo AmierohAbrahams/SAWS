@@ -32,6 +32,7 @@ library(reshape2)
 library(lubridate)
 library(data.table)
 library(plyr)
+library(rWind)  
 ```
 
 # This code extracts the x and y wind variables. Using this I will now calculate wind speed. 
@@ -101,6 +102,7 @@ wind_direction <-ddply(combined_wind, 'time', summarize, windDir=windDir(Ucomp, 
 wind_direction <- wind_direction %>% 
   select(windDir)
 wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
+
 
 
 

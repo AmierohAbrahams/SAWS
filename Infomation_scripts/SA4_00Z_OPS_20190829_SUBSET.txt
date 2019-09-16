@@ -1,0 +1,49 @@
+File SA4_00Z_OPS_20190829_SUBSET.nc (NC_FORMAT_NETCDF4):
+
+     6 variables (excluding dimension variables):
+        double leadtime[time]   (Chunking: [524288])  
+            standard_name: forecast_period
+            long_name: Time elapsed since the start of the forecast
+            units: hours
+        double longitude_bnds[bnds,longitude]   (Contiguous storage)  
+        double latitude_bnds[bnds,latitude]   (Contiguous storage)  
+        float x_wind[longitude,latitude,time]   (Chunking: [701,395,1])  
+            standard_name: x_wind
+            units: m s-1
+            um_stash_source: m01s03i225
+        float y_wind[longitude,latitude,time]   (Chunking: [701,395,1])  
+            standard_name: y_wind
+            units: m s-1
+            um_stash_source: m01s03i226
+        float air_pressure_at_sea_level[longitude,latitude,time]   (Chunking: [701,395,1])  
+            standard_name: air_pressure_at_sea_level
+            units: Pa
+            um_stash_source: m01s16i222
+
+     4 dimensions:
+        time  Size:73   *** is unlimited ***
+            standard_name: time
+            units: hours since 1970-01-01 00:00:00
+            calendar: gregorian
+            axis: T
+        longitude  Size:701
+            standard_name: longitude
+            long_name: longitude
+            units: degrees_east
+            axis: X
+            bounds: longitude_bnds
+        bnds  Size:2
+        latitude  Size:395
+            standard_name: latitude
+            long_name: latitude
+            units: degrees_north
+            axis: Y
+            bounds: latitude_bnds
+
+    6 global attributes:
+        CDI: Climate Data Interface version 1.9.2 (http://mpimet.mpg.de/cdi)
+        Conventions: CF-1.6
+        history: Thu Aug 29 09:00:11 2019: cdo sellonlatbox,11.5,39,-38,-23 /data/UM/ops/SA4_0020190829.nc /home/marine/StormSurge/Data/UM/NC_Files/SA4_00Z_OPS_20190829_SUBSET.nc
+        source: Data from Met Office Unified Model
+        um_version: 10.9
+        CDO: Climate Data Operators version 1.9.2 (http://mpimet.mpg.de/cdo)
