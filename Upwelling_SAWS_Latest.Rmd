@@ -34,13 +34,16 @@ library(data.table)
 library(plyr)
 ```
 
-
+# This script extracts the x and y wind variables. Using this I will now calculate wind speed. 
 
 ```{r}
 
 # #          1         2         3         4
 # # 12345678901234567890123456789012345678901
 # # SA4_00Z_OPS_20190829_SUBSET.nc
+
+ncDir <- "/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc"
+csvDir <- "/home/amieroh/Documents/SAWS/data"
 
 # read_nc <- function(ncDir = ncDir, csvDir = csvDir) 
   ncList <- list.files(path = paste0(ncDir), pattern = "*.nc", full.names = TRUE, include.dirs = TRUE)
@@ -49,7 +52,7 @@ library(plyr)
   strtDate <- str_sub(ncFirst, start = 13, end = 20)
   endDate <- str_sub(ncLast, start = 13, end = 20)
 # 
-ncFile <- '/home/amieroh/Documents/SAWS_upwelling/SA4_00Z_OPS_20190829_SUBSET.nc'  # This makes reference to my directory. You will have to change this on your system
+ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
 
 nc <- nc_open(ncFile)
  # pathLen <- nchar(paste0(ncDir, "/")) + 1
@@ -83,11 +86,6 @@ nc <- nc_open(ncFile)
          append = TRUE, col.names = FALSE)
 
 save(combined_wind, file = "combined_wind.RData")
-
-```
-
-```{r}
-
 ```
 
 
