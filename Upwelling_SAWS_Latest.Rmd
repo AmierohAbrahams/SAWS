@@ -1,0 +1,112 @@
+---
+title: "SAWS_upwelling"
+author: "Amieroh Abrahams"
+date: "29 August 2019"
+output: html_document
+---
+
+# Upwelling
+  # Script for the forecasting data obtained from the SAWS
+  # This script extracts the netCDF wind data and use it accordingly for the aim to calculate upwelling indeces
+
+Upwelling is primarily caused by alongshore, equator ward winds. These winds are caused by cross-shore atmospheric pressure gradients, and these gradients occur predominantly during heating periods. Upwelling is defined as the process whereby cold, nutrient rich, high concentrated CO2, low pH, and low oxygenated waters are pushed to the surface as a result of alongshore winds interacting with the earth’s rotation.
+
+# Upwelling indeces
+  # Determining upwelling index from wind data (SAWS)
+  # Index Equation from Fielding & Davis 1989 paper
+
+$$ UpwellingIndex = μ{(Cosθ − 160)}$$
+
+In this equation μ represents the wind speed (m/s) and θ represents the wind direction which is measured in degrees. The 160 degrees is used as this refers to the angle of the coastline. This equation is largely dependant on wind speed and direction data in order to determing the intensity of the upwelling event. Wind data were obtained daily from the South African Weather Service (SAWS). This wind data was then matched to the date at which temperature were collected. With this data the upwelling index was determined.
+
+# Load libraries
+
+```{r}
+library(ncdf4) # package for netcdf manipulation
+library(raster) # package for raster manipulation
+library(rgdal) # package for geospatial analysis
+library(ggplot2) # package for plotting
+library(stringr)
+library(tidyverse)
+library(reshape2)
+library(lubridate)
+library(data.table)
+library(plyr)
+```
+
+
+
+```{r}
+
+# #          1         2         3         4
+# # 12345678901234567890123456789012345678901
+# # SA4_00Z_OPS_20190829_SUBSET.nc
+
+# read_nc <- function(ncDir = ncDir, csvDir = csvDir) 
+  ncList <- list.files(path = paste0(ncDir), pattern = "*.nc", full.names = TRUE, include.dirs = TRUE)
+  ncFirst <- head(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
+  ncLast <- tail(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
+  strtDate <- str_sub(ncFirst, start = 13, end = 20)
+  endDate <- str_sub(ncLast, start = 13, end = 20)
+# 
+ncFile <- '/home/amieroh/Documents/SAWS_upwelling/SA4_00Z_OPS_20190829_SUBSET.nc'  # This makes reference to my directory. You will have to change this on your system
+
+nc <- nc_open(ncFile)
+ # pathLen <- nchar(paste0(ncDir, "/")) + 1
+  fNameStem <-
+    substr(basename(ncFile), 1, 12)
+  fDate <- substr(basename(ncFile), 13, 20)
+  x_wind <- ncvar_get(nc, varid = "x_wind") %>%
+    round(4)
+  y_wind <- ncvar_get(nc, varid = "y_wind") %>% 
+    round(4)
+  dimnames(x_wind) <- list(lon = nc$dim$lon$vals,
+                        lat = nc$dim$lat$vals)
+  dimnames(y_wind) <- list(lon = nc$dim$lon$vals,
+                        lat = nc$dim$lat$vals)
+  nc_close(nc)
+  x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
+  y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
+  x_wind$time <- ymd(fDate)
+  y_wind$time <- ymd(fDate)
+  y_wind <- y_wind %>% 
+    select(y_wind)
+  na.omit(x_wind)
+  na.omit(y_wind)
+  x_wind <- x_wind %>% 
+    select(lat, lon, x_wind,time)
+  y_wind <- y_wind %>% 
+    select(y_wind)
+  combined_wind <- cbind(x_wind,y_wind)
+  fwrite(combined_wind,
+         file = paste0(csvDir, "/", fNameStem, "-", strtDate, "-", endDate, ".csv"),
+         append = TRUE, col.names = FALSE)
+
+save(combined_wind, file = "combined_wind.RData")
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
