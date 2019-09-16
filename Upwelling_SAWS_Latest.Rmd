@@ -34,7 +34,7 @@ library(data.table)
 library(plyr)
 ```
 
-# This script extracts the x and y wind variables. Using this I will now calculate wind speed. 
+# This code extracts the x and y wind variables. Using this I will now calculate wind speed. 
 
 ```{r}
 
@@ -80,17 +80,31 @@ nc <- nc_open(ncFile)
     select(lat, lon, x_wind,time)
   y_wind <- y_wind %>% 
     select(y_wind)
-  combined_wind <- cbind(x_wind,y_wind)
+  combined_wind <- cbind(x_wind,y_wind) %>% 
+  dplyr::rename(Vcomp = y_wind) %>% 
+  dplyr::rename(Ucomp = x_wind)
+  
   fwrite(combined_wind,
          file = paste0(csvDir, "/", fNameStem, "-", strtDate, "-", endDate, ".csv"),
-         append = TRUE, col.names = FALSE)
+         append = TRUE, col.names = FALSE) # This creates a CSV file with the 
 
 save(combined_wind, file = "combined_wind.RData")
+
+# Using U and V components to determine the wind direction
+windDir <- function(u, v) {
+  if(v > 0)         ((180 / pi) * atan(u/v) + 180)
+  if(u < 0 & v < 0) ((180 / pi) * atan(u/v) + 0)
+  if(u > 0 & v < 0) ((180 / pi) * atan(u/v) + 360)
+}
+
+wind_direction <-ddply(combined_wind, 'time', summarize, windDir=windDir(Ucomp, Vcomp))
+wind_direction <- wind_direction %>% 
+  select(windDir)
+wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
+
+
+
 ```
-
-
-
-
 
 
 
