@@ -52,26 +52,27 @@ csvDir <- "/home/amieroh/Documents/SAWS/data"
   ncLast <- tail(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
   strtDate <- str_sub(ncFirst, start = 13, end = 20)
   endDate <- str_sub(ncLast, start = 13, end = 20)
-# 
+
 ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
 
 nc <- nc_open(ncFile)
  # pathLen <- nchar(paste0(ncDir, "/")) + 1
   fNameStem <-
     substr(basename(ncFile), 1, 12)
-  fDate <- substr(basename(ncFile), 13, 20)
+  # fDate <- substr(basename(ncFile), 13, 20)
   x_wind <- ncvar_get(nc, varid = "x_wind") %>%
     round(4)
   y_wind <- ncvar_get(nc, varid = "y_wind") %>% 
     round(4)
   dimnames(x_wind) <- list(lon = nc$dim$lon$vals,
-                        lat = nc$dim$lat$vals)
+                        lat = nc$dim$lat$vals,
+                        time = nc$dim$time$vals)
   dimnames(y_wind) <- list(lon = nc$dim$lon$vals,
                         lat = nc$dim$lat$vals)
   nc_close(nc)
   x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
   y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
-  x_wind$time <- ymd(fDate)
+  x_wind$time <- ymd_hms(fDate)              # In 1970-01-01 00:00:00 format 
   y_wind$time <- ymd(fDate)
   y_wind <- y_wind %>% 
     select(y_wind)
@@ -103,9 +104,29 @@ wind_direction <- wind_direction %>%
   select(windDir)
 wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
 
+# Temperature data
+# http://marine.copernicus.eu/services-portfolio/access-to-products/?option=com_csw&view=details&product_id=GLOBAL_ANALYSIS_FORECAST_PHY_001_024
+# GLOBAL-ANALYSIS-FORECAST-PHY-001-024
+# Manually downloaded a netCDF file from this website  using the following coordinates y: -25 and 25 ; x: -35 and 20 - This selects the Benguela region only
+# When manually selecting the data Remove the variables to only have SST variables and then set the dates accordingly
 
+# Downloads a netCDF: The code below extracts the data from the netCDFs
 
+ncFile <- '/home/amieroh/Documents/SAWS/data/global-analysis-forecast-phy-001-024_1568709782139.nc'  # This makes reference to my directory. You will have to change this on your system
 
+# #          1         2         3         4         5
+# # 12345678901234567890123456789012345678901234567890123
+# # global-analysis-forecast-phy-001-024_1568709782139.nc
+
+nc <- nc_open(ncFile)
+  fNameStem <-
+    substr(basename(ncFile), 1, 50)
+  #fDate <- substr(basename(ncFile), 13, 20)
+  Temperature <- ncvar_get(nc, varid = "thetao") %>%
+  round(4)
+  dimnames(Temperature) <- list(lon = nc$dim$lon$vals,
+                        lat = nc$dim$lat$vals)
+  dimnames(Temperature) <- list(time = nc$dim$time$vals)
 ```
 
 
