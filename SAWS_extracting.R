@@ -1,0 +1,128 @@
+################################################################################################################
+# Upwelling
+  # Script for the forecasting data obtained from the SAWS
+  # This script extracts the netCDF wind data and use it accordingly for the aim to calculate upwelling indeces
+
+# Upwelling indeces
+# Determining upwelling index from wind data (SAWS)
+# Index Equation from Fielding & Davis 1989 paper
+
+# Load libraries
+library(ncdf4) # package for netcdf manipulation
+library(raster) # package for raster manipulation
+library(rgdal) # package for geospatial analysis
+library(ggplot2) # package for plotting
+library(stringr)
+library(tidyverse)
+library(reshape2)
+library(lubridate)
+library(data.table)
+library(plyr)
+library(rWind)  
+
+# #          1         2         3         4
+# # 12345678901234567890123456789012345678901
+# # SA4_00Z_OPS_20190829_SUBSET.nc
+
+ncDir <- "/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc"
+csvDir <- "/home/amieroh/Documents/SAWS/data"
+
+# read_nc <- function(ncDir = ncDir, csvDir = csvDir) 
+ncList <- list.files(path = paste0(ncDir), pattern = "*.nc", full.names = TRUE, include.dirs = TRUE)
+ncFirst <- head(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
+ncLast <- tail(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
+strtDate <- str_sub(ncFirst, start = 13, end = 20)
+endDate <- str_sub(ncLast, start = 13, end = 20)
+
+ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
+
+nc <- nc_open(ncFile)
+# pathLen <- nchar(paste0(ncDir, "/")) + 1
+fNameStem <-
+  substr(basename(ncFile), 1, 12)
+# fDate <- substr(basename(ncFile), 13, 20)
+x_wind <- ncvar_get(nc, varid = "x_wind") %>%
+  round(4)
+y_wind <- ncvar_get(nc, varid = "y_wind") %>% 
+  round(4)
+dimnames(x_wind) <- list(lon = nc$dim$lon$vals,
+                         lat = nc$dim$lat$vals,
+                         time = nc$dim$time$vals)
+dimnames(y_wind) <- list(lon = nc$dim$lon$vals,
+                         lat = nc$dim$lat$vals)
+nc_close(nc)
+x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
+y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
+x_wind$time <- ymd_hms(fDate)              # In 1970-01-01 00:00:00 format (see in folder >>>Infomation_scripts>>>SA4_00Z_0PS_20190829) - Try and extract this without using fDate
+y_wind$time <- ymd(fDate)
+y_wind <- y_wind %>% 
+  select(y_wind)
+na.omit(x_wind)
+na.omit(y_wind)
+x_wind <- x_wind %>% 
+  select(lat, lon, x_wind,time)
+y_wind <- y_wind %>% 
+  select(y_wind)
+combined_wind <- cbind(x_wind,y_wind) %>% 
+  dplyr::rename(Vcomp = y_wind) %>% 
+  dplyr::rename(Ucomp = x_wind)
+
+fwrite(combined_wind,
+       file = paste0(csvDir, "/", fNameStem, "-", strtDate, "-", endDate, ".csv"),
+       append = TRUE, col.names = FALSE) # This creates a CSV file with the 
+
+save(combined_wind, file = "combined_wind.RData")
+
+# Using U and V components to determine the wind direction
+windDir <- function(u, v) {
+  if(v > 0)         ((180 / pi) * atan(u/v) + 180)
+  if(u < 0 & v < 0) ((180 / pi) * atan(u/v) + 0)
+  if(u > 0 & v < 0) ((180 / pi) * atan(u/v) + 360)
+}
+
+wind_direction <-ddply(combined_wind, 'time', summarize, windDir=windDir(Ucomp, Vcomp))
+wind_direction <- wind_direction %>% 
+  select(windDir)
+wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
+
+# Temperature data
+# http://marine.copernicus.eu/services-portfolio/access-to-products/?option=com_csw&view=details&product_id=GLOBAL_ANALYSIS_FORECAST_PHY_001_024
+# GLOBAL-ANALYSIS-FORECAST-PHY-001-024
+# Manually downloaded a netCDF file from this website  using the following coordinates y: -25 and 25 ; x: -35 and 20 - This selects the Benguela region only
+# When manually selecting the data Remove the variables to only have SST variables and then set the dates accordingly
+
+# Downloads a netCDF: The code below extracts the data from the netCDFs
+
+ncFile <- '/home/amieroh/Documents/SAWS/data/global-analysis-forecast-phy-001-024_1568709782139.nc'  # This makes reference to my directory. You will have to change this on your system
+
+# #          1         2         3         4         5
+# # 12345678901234567890123456789012345678901234567890123
+# # global-analysis-forecast-phy-001-024_1568709782139.nc
+
+nc <- nc_open(ncFile)
+fNameStem <-
+  substr(basename(ncFile), 1, 50)
+#fDate <- substr(basename(ncFile), 13, 20) # fDate does not apply because date not present in the filename.
+Temperature <- ncvar_get(nc, varid = "thetao") %>%
+  round(4)
+dimnames(Temperature) <- list(lon = nc$dim$lon$vals,
+                              lat = nc$dim$lat$vals)
+dimnames(Temperature) <- list(time = nc$dim$time$vals)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
