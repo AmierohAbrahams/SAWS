@@ -130,6 +130,22 @@ nc <- nc_open(ncFile)
 ```
 
 
+# Upwelling index
+
+```{r}
+
+# TO do:
+# Get a dataset using the extracted datasets created above with daily temp and wind speed and direction in one column
+# Create a column with the sites
+
+UI_angle <- (wind_daily) %>%  # Making refeerence to the wind daily datta created above
+  dplyr::rename(site = sites) %>%  # Renaming sites to site
+  mutate(ui.saws = mean_speed * (cos(dir_circ - 160))) %>% # applying the ui formula
+  drop_na %>% # removing the na values
+  
+# UI dataset produces the upwelling index
+save(UI_angle, file = "Data/UI_angle.csv")
+```
 
 
 
