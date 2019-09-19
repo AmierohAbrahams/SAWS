@@ -120,15 +120,3 @@ dimnames(Temperature) <- list(time = nc$dim$time$vals)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
