@@ -53,7 +53,12 @@ dimnames(y_wind) <- list(lon = nc$dim$lon$vals,
 nc_close(nc)
 x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
 y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
-x_wind$time <- ymd_hms(fDate)              # In 1970-01-01 00:00:00 format (see in folder >>>Infomation_scripts>>>SA4_00Z_0PS_20190829) - Try and extract this without using fDate
+
+x_wind$time <- ymd_hms(time)              # In 1970-01-01 00:00:00 format (see in folder >>>Infomation_scripts>>>SA4_00Z_0PS_20190829) - Try and extract this without using fDate
+# Error in as.character(x) : 
+#   cannot coerce type 'closure' to vector of type 'character'
+
+
 y_wind$time <- ymd(fDate)
 y_wind <- y_wind %>% 
   select(y_wind)
