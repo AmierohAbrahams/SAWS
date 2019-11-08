@@ -5,20 +5,6 @@ date: "29 August 2019"
 output: html_document
 ---
 
-# Upwelling
-  # Script for the forecasting data obtained from the SAWS
-  # This script extracts the netCDF wind data and use it accordingly for the aim to calculate upwelling indeces
-
-Upwelling is primarily caused by alongshore, equator ward winds. These winds are caused by cross-shore atmospheric pressure gradients, and these gradients occur predominantly during heating periods. Upwelling is defined as the process whereby cold, nutrient rich, high concentrated CO2, low pH, and low oxygenated waters are pushed to the surface as a result of alongshore winds interacting with the earth’s rotation.
-
-# Upwelling indeces
-  # Determining upwelling index from wind data (SAWS)
-  # Index Equation from Fielding & Davis 1989 paper
-
-$$ UpwellingIndex = μ{(Cosθ − 160)}$$
-
-In this equation μ represents the wind speed (m/s) and θ represents the wind direction which is measured in degrees. The 160 degrees is used as this refers to the angle of the coastline. This equation is largely dependant on wind speed and direction data in order to determing the intensity of the upwelling event. Wind data were obtained daily from the South African Weather Service (SAWS). This wind data was then matched to the date at which temperature were collected. With this data the upwelling index was determined.
-
 # Load libraries
 
 ```{r}
@@ -31,11 +17,11 @@ library(tidyverse)
 library(reshape2)
 library(lubridate)
 library(data.table)
-library(plyr)
+# library(plyr)
 library(rWind)  
 ```
 
-# This code extracts the x and y wind variables. Using this I will now calculate wind speed. 
+# This code extracts the netCDF that I was given from SAWS
 
 ```{r}
 
@@ -43,23 +29,13 @@ library(rWind)
 # # 12345678901234567890123456789012345678901
 # # SA4_00Z_OPS_20190829_SUBSET.nc
 
-ncDir <- "/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc"
-csvDir <- "/home/amieroh/Documents/SAWS/data"
-
-# read_nc <- function(ncDir = ncDir, csvDir = csvDir) 
-  ncList <- list.files(path = paste0(ncDir), pattern = "*.nc", full.names = TRUE, include.dirs = TRUE)
-  ncFirst <- head(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
-  ncLast <- tail(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
-  strtDate <- str_sub(ncFirst, start = 13, end = 20)
-  endDate <- str_sub(ncLast, start = 13, end = 20)
-
-ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
+ncFile <- '/home/amieroh/Documents/SAWS/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This is just the path where the netCDF file lives. This will have to be changed accordingly
 
 nc <- nc_open(ncFile)
  # pathLen <- nchar(paste0(ncDir, "/")) + 1
   fNameStem <-
     substr(basename(ncFile), 1, 12)
-  # fDate <- substr(basename(ncFile), 13, 20)
+  fDate <- substr(basename(ncFile), 13, 20)
   x_wind <- ncvar_get(nc, varid = "x_wind") %>%
     round(4)
   y_wind <- ncvar_get(nc, varid = "y_wind") %>% 
@@ -72,7 +48,7 @@ nc <- nc_open(ncFile)
   nc_close(nc)
   x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
   y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
-  x_wind$time <- ymd_hms(fDate)              # In 1970-01-01 00:00:00 format mutate(date = as.POSIXct(as.character(date), "%Y%m%d%H%M", tz = "Africa/Johannesburg")) 
+  x_wind$time <- ymd(fDate)              # In 1970-01-01 00:00:00 format mutate(date = as.POSIXct(as.character(date), "%Y%m%d%H%M", tz = "Africa/Johannesburg")) 
   y_wind$time <- ymd(fDate)
   y_wind <- y_wind %>% 
     select(y_wind)
@@ -86,10 +62,7 @@ nc <- nc_open(ncFile)
   dplyr::rename(Vcomp = y_wind) %>% 
   dplyr::rename(Ucomp = x_wind)
   
-  fwrite(combined_wind,
-         file = paste0(csvDir, "/", fNameStem, "-", strtDate, "-", endDate, ".csv"),
-         append = TRUE, col.names = FALSE) # This creates a CSV file with the 
-
+# Saving the data in RData format (R format)
 save(combined_wind, file = "combined_wind.RData")
 
 # Using U and V components to determine the wind direction
@@ -104,6 +77,10 @@ wind_direction <- wind_direction %>%
   select(windDir)
 wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
 
+# Next is to calculate wind speed (The upwelling formula requires wind speed)
+```
+
+```{r}
 # Temperature data
 # http://marine.copernicus.eu/services-portfolio/access-to-products/?option=com_csw&view=details&product_id=GLOBAL_ANALYSIS_FORECAST_PHY_001_024
 # GLOBAL-ANALYSIS-FORECAST-PHY-001-024
@@ -138,13 +115,13 @@ nc <- nc_open(ncFile)
 # Get a dataset using the extracted datasets created above with daily temp and wind speed and direction in one column
 # Create a column with the sites
 
-UI_angle <- (wind_daily) %>%  # Making refeerence to the wind daily datta created above
+Upwelling_index <- (wind_daily) %>%  # Making refeerence to the wind daily datta created above
   dplyr::rename(site = sites) %>%  # Renaming sites to site
   mutate(ui.saws = mean_speed * (cos(dir_circ - 160))) %>% # applying the ui formula
   drop_na %>% # removing the na values
   
 # UI dataset produces the upwelling index
-save(UI_angle, file = "Data/UI_angle.csv")
+save(UI_angle, file = "Upwelling_index.csv")
 ```
 
 
