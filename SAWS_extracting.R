@@ -23,7 +23,7 @@ library(circular)
 # # 12345678901234567890123456789012345678901
 # # SA4_00Z_OPS_20190829_SUBSET.nc
 
-ncFile <- '/home/amieroh/Documents/SAWS/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
+ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
 
 nc <- nc_open(ncFile)
 fNameStem <-
@@ -37,12 +37,13 @@ dimnames(x_wind) <- list(lon = nc$dim$lon$vals,
                          lat = nc$dim$lat$vals,
                          time = nc$dim$time$vals)
 dimnames(y_wind) <- list(lon = nc$dim$lon$vals,
-                         lat = nc$dim$lat$vals)
+                         lat = nc$dim$lat$vals,
+                         time = nc$dim$time$vals)
 nc_close(nc)
 x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
 y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
-x_wind$time <- ymd(fDate)              # In 1970-01-01 00:00:00 format mutate(date = as.POSIXct(as.character(date), "%Y%m%d%H%M", tz = "Africa/Johannesburg")) 
-y_wind$time <- ymd(fDate)
+x_wind$time <- as.POSIXct(x_wind$time * 60 * 60, origin = "1970-01-01 00:00:00")
+y_wind$time <- as.POSIXct(y_wind$time * 60 * 60, origin = "1970-01-01 00:00:00")
 y_wind <- y_wind %>% 
   select(y_wind)
 na.omit(x_wind)
@@ -55,7 +56,7 @@ combined_wind <- cbind(x_wind,y_wind) %>%
   dplyr::rename(v = y_wind) %>% 
   dplyr::rename(u = x_wind)
 
-load("~/Documents/SAWS/SAWS/site_list_v4.2.RData") # Once again this is to the directly with the site_list_v4.2.RData (I attached this in the mail)
+load("/home/amieroh/Documents/SAWS/Rdata/site_list_v4.2.RData") # Once again this is to the directly with the site_list_v4.2.RData (I attached this in the mail)
 site_list <- site_list %>% 
   select(site,lat,lon) %>% 
   mutate_if(is.numeric, round, digits = 2) 
@@ -99,7 +100,7 @@ Upwelling_index <- wind_daily %>%  # Making refeerence to the wind daily datta c
   drop_na # removing the na values
   
 # UI dataset produces the upwelling index
-  save(Upwelling_index, file = "Upwelling_index.csv")
+save(Upwelling_index, file = "Upwelling_index.csv")
 
 
 
