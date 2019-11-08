@@ -3,12 +3,7 @@
 http://marine.weathersa.co.za/Forecasts_Home.html
 
 # Upwelling
-  # Script for the forecasting data obtained from the SAWS
   # This script extracts the netCDF wind data and use it accordingly for the aim to calculate upwelling indeces
-
-# Upwelling indeces
-# Determining upwelling index from wind data (SAWS)
-# Index Equation from Fielding & Davis 1989 paper
 
 # Load libraries
 library(ncdf4) # package for netcdf manipulation
@@ -20,30 +15,20 @@ library(tidyverse)
 library(reshape2)
 library(lubridate)
 library(data.table)
-library(plyr)
+# library(plyr)
 library(rWind)  
+library(circular)
 
 # #          1         2         3         4
 # # 12345678901234567890123456789012345678901
 # # SA4_00Z_OPS_20190829_SUBSET.nc
 
-ncDir <- "/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc"
-csvDir <- "/home/amieroh/Documents/SAWS/data"
-
-# read_nc <- function(ncDir = ncDir, csvDir = csvDir) 
-ncList <- list.files(path = paste0(ncDir), pattern = "*.nc", full.names = TRUE, include.dirs = TRUE)
-ncFirst <- head(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
-ncLast <- tail(list.files(path = paste0(ncDir, "/"), pattern = "*.nc", full.names = FALSE), 1)
-strtDate <- str_sub(ncFirst, start = 13, end = 20)
-endDate <- str_sub(ncLast, start = 13, end = 20)
-
-ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
+ncFile <- '/home/amieroh/Documents/SAWS/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
 
 nc <- nc_open(ncFile)
-# pathLen <- nchar(paste0(ncDir, "/")) + 1
 fNameStem <-
   substr(basename(ncFile), 1, 12)
-# fDate <- substr(basename(ncFile), 13, 20)
+fDate <- substr(basename(ncFile), 13, 20)
 x_wind <- ncvar_get(nc, varid = "x_wind") %>%
   round(4)
 y_wind <- ncvar_get(nc, varid = "y_wind") %>% 
@@ -56,10 +41,7 @@ dimnames(y_wind) <- list(lon = nc$dim$lon$vals,
 nc_close(nc)
 x_wind <- as_tibble(melt(x_wind, value.name = "x_wind"))
 y_wind <- as_tibble(melt(y_wind, value.name = "y_wind"))
-
-x_wind$time <- ymd_hms(time)              # In 1970-01-01 00:00:00 format (see in folder >>>Infomation_scripts>>>SA4_00Z_0PS_20190829) - Try and extract this without using fDate
-# Error in as.character(x) : 
-#   cannot coerce type 'closure' to vector of type 'character'
+x_wind$time <- ymd(fDate)              # In 1970-01-01 00:00:00 format mutate(date = as.POSIXct(as.character(date), "%Y%m%d%H%M", tz = "Africa/Johannesburg")) 
 y_wind$time <- ymd(fDate)
 y_wind <- y_wind %>% 
   select(y_wind)
@@ -70,52 +52,54 @@ x_wind <- x_wind %>%
 y_wind <- y_wind %>% 
   select(y_wind)
 combined_wind <- cbind(x_wind,y_wind) %>% 
-  dplyr::rename(Vcomp = y_wind) %>% 
-  dplyr::rename(Ucomp = x_wind)
+  dplyr::rename(v = y_wind) %>% 
+  dplyr::rename(u = x_wind)
 
-fwrite(combined_wind,
-       file = paste0(csvDir, "/", fNameStem, "-", strtDate, "-", endDate, ".csv"),
-       append = TRUE, col.names = FALSE) # This creates a CSV file with the 
+load("~/Documents/SAWS/SAWS/site_list_v4.2.RData") # Once again this is to the directly with the site_list_v4.2.RData (I attached this in the mail)
+site_list <- site_list %>% 
+  select(site,lat,lon) %>% 
+  mutate_if(is.numeric, round, digits = 2) 
 
-save(combined_wind, file = "combined_wind.RData")
+site_list$lat <- round(site_list$lat,0)
 
-# Using U and V components to determine the wind direction
-windDir <- function(u, v) {
-  if(v > 0)         ((180 / pi) * atan(u/v) + 180)
-  if(u < 0 & v < 0) ((180 / pi) * atan(u/v) + 0)
-  if(u > 0 & v < 0) ((180 / pi) * atan(u/v) + 360)
-}
+wind_sites <- combined_wind %>% 
+  left_join(site_list, by = c( "lon", "lat")) # Adding the sites to the data
 
-wind_direction <-ddply(combined_wind, 'time', summarize, windDir=windDir(Ucomp, Vcomp))
-wind_direction <- wind_direction %>% 
-  select(windDir)
-wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
+# save(wind_sites, file = "wind_sites.RData")
+# Calculating wind speed
+wind_sites$u_squared ='^'(wind_sites$u,2)
+wind_sites$v_squared ='^'(wind_sites$v,2)
+wind_sites <- wind_sites %>% 
+  mutate(speed = sqrt(u_squared + v_squared))
 
-# Temperature data
-# http://marine.copernicus.eu/services-portfolio/access-to-products/?option=com_csw&view=details&product_id=GLOBAL_ANALYSIS_FORECAST_PHY_001_024
-# GLOBAL-ANALYSIS-FORECAST-PHY-001-024
-# Manually downloaded a netCDF file from this website  using the following coordinates y: -25 and 25 ; x: -35 and 20 - This selects the Benguela region only
-# When manually selecting the data Remove the variables to only have SST variables and then set the dates accordingly
+# Calculate wind direction 
+#wind_abs = sqrt(u_ms^2 + v_ms^2) #speed
 
-# Downloads a netCDF: The code below extracts the data from the netCDFs
-
-ncFile <- '/home/amieroh/Documents/SAWS/data/global-analysis-forecast-phy-001-024_1568709782139.nc'  # This makes reference to my directory. You will have to change this on your system
-
-# #          1         2         3         4         5
-# # 12345678901234567890123456789012345678901234567890123
-# # global-analysis-forecast-phy-001-024_1568709782139.nc
-
-nc <- nc_open(ncFile)
-fNameStem <-
-  substr(basename(ncFile), 1, 50)
-#fDate <- substr(basename(ncFile), 13, 20) # fDate does not apply because date not present in the filename.
-Temperature <- ncvar_get(nc, varid = "thetao") %>%
-  round(4)
-dimnames(Temperature) <- list(lon = nc$dim$lon$vals,
-                              lat = nc$dim$lat$vals)
-dimnames(Temperature) <- list(time = nc$dim$time$vals)
+wind_sites_complete <- wind_sites %>% 
+  mutate(wind_dir_trig_to = atan2(u/speed, v/speed),
+         wind_dir_trig_to_degrees = wind_dir_trig_to * 180/pi,
+         wind_dir_trig_from_degrees = wind_dir_trig_to_degrees + 180, #convert this wind vector to the meteorological convention of the direction the wind is coming from
+         wind_dir_cardinal = 90 - wind_dir_trig_from_degrees) # convert that angle from "trig" coordinates to cardinal coordinates
 
 
+###### Convert into daily data
+wind_daily <- wind_sites_complete %>%
+  ungroup() %>%
+  mutate(date = as.Date(time))%>% # Changing the date to date format
+  dplyr::group_by(lat, lon, date) %>%
+ # filter(site %in% selected_sites) %>%  # Matching the sites to wind temp sites
+  dplyr::summarise(dir_circ = round(mean.circular(circular(wind_dir_cardinal, units = "degrees")),2), # Direction using the circular function
+  mean_speed = round(mean(speed),2)) # Calculating the mean
+
+
+# Upwelling index
+
+Upwelling_index <- wind_daily %>%  # Making refeerence to the wind daily datta created above
+  mutate(ui.saws = mean_speed * (cos(dir_circ - 160))) %>% # applying the ui formula
+  drop_na # removing the na values
+  
+# UI dataset produces the upwelling index
+  save(Upwelling_index, file = "Upwelling_index.csv")
 
 
 
