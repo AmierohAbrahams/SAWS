@@ -100,8 +100,6 @@ Upwelling_index <- wind_daily %>%  # Making refeerence to the wind daily datta c
   drop_na # removing the na values
   
 # UI dataset produces the upwelling index
-save(Upwelling_index, file = "Upwelling_index.csv")
-
-
+write_csv(Upwelling_index, path = "Upwelling_index.csv")
 
 
