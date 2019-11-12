@@ -19,11 +19,17 @@ library(data.table)
 library(rWind)  
 library(circular)
 
+# SET UP FOLDER (USED IN MULTIPLE PLACES).
+#
+DATADIR <- "/home/amieroh/Documents/SAWS"
+
+NCFILE <- strftime(Sys.Date(), "SA4_00Z_OPS_%Y%m%d.nc")
+
 # #          1         2         3         4
 # # 12345678901234567890123456789012345678901
 # # SA4_00Z_OPS_20190829_SUBSET.nc
 
-ncFile <- '/home/amieroh/Documents/SAWS/data/SA4_00Z_OPS_20190829.nc'  # This makes reference to my directory. You will have to change this on your system
+ncFile <- file.path(DATADIR, 'data', NCFILE)
 
 nc <- nc_open(ncFile)
 fNameStem <-
@@ -56,7 +62,8 @@ combined_wind <- cbind(x_wind,y_wind) %>%
   dplyr::rename(v = y_wind) %>% 
   dplyr::rename(u = x_wind)
 
-load("/home/amieroh/Documents/SAWS/Rdata/site_list_v4.2.RData") # Once again this is to the directly with the site_list_v4.2.RData (I attached this in the mail)
+load(file.path(DATADIR, 'Rdata/site_list_v4.2.RData'))
+     
 site_list <- site_list %>% 
   select(site,lat,lon) %>% 
   mutate_if(is.numeric, round, digits = 2) 
