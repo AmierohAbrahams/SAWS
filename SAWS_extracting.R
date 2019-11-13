@@ -4,7 +4,7 @@ http://marine.weathersa.co.za/Forecasts_Home.html
 
 # Upwelling
   # This script extracts the netCDF wind data and use it accordingly for the aim to calculate upwelling indeces
-  # Selects the latest file downloaded
+  # Selects the latest file downloaded - automated script
 
 # Load libraries
 library(ncdf4) # package for netcdf manipulation
