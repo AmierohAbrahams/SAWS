@@ -111,3 +111,14 @@ Upwelling_index <- wind_daily %>%  # Making refeerence to the wind daily datta c
 write_csv(Upwelling_index, path = "Upwelling_index.csv")
 
 
+
+upwelling_graph <- wind.data %>% 
+  summarise(mean_temp = mean(temp),
+            sd_temp = sd(temp))
+
+# Things to change:
+  # Only get for the west coast site
+  # Match the names for each of the sites to the UI
+
+
+
