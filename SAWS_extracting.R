@@ -4,7 +4,6 @@ http://marine.weathersa.co.za/Forecasts_Home.html
 
 # Upwelling
   # This script extracts the netCDF wind data and use it accordingly for the aim to calculate upwelling indeces
-  # Selects the latest file downloaded - automated script
 
 # Load libraries
 library(ncdf4) # package for netcdf manipulation
@@ -109,10 +108,5 @@ Upwelling_index <- wind_daily %>%  # Making refeerence to the wind daily datta c
   
 # UI dataset produces the upwelling index
 write_csv(Upwelling_index, path = "Upwelling_index.csv")
-
-# Things to change:
-  # Only get for the west coast site
-  # Match the names for each of the sites to the UI
-
 
 

@@ -73,11 +73,13 @@ windDir <- function(u, v) {
 }
 
 wind_direction <-ddply(combined_wind, 'time', summarize, windDir=windDir(Ucomp, Vcomp))
-wind_direction <- wind_direction %>% 
+wind_direction <- wind_direction %>%
   select(windDir)
 wind <- cbind(wind_direction,combined_wind) # New dataframe with the wind directions addded
 
 # Next is to calculate wind speed (The upwelling formula requires wind speed)
+
+
 ```
 
 ```{r}
