@@ -109,4 +109,7 @@ Upwelling_index <- wind_daily %>%  # Making refeerence to the wind daily datta c
 # UI dataset produces the upwelling index
 write_csv(Upwelling_index, path = "Upwelling_index.csv")
 
+# Research
+    # Any value below 0 is regarded as downwelling
+    # Value above 0 regarded as upwelling
 
